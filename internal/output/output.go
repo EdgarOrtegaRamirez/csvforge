@@ -68,7 +68,7 @@ func (w *Writer) Write(header []string, records [][]string, out io.Writer) error
 // writeTable writes a formatted table
 func (w *Writer) writeTable(header []string, records [][]string, out io.Writer) error {
 	tw := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
-	
+
 	// Write header
 	for i, h := range header {
 		if i > 0 {
@@ -77,7 +77,7 @@ func (w *Writer) writeTable(header []string, records [][]string, out io.Writer) 
 		fmt.Fprint(tw, strings.ToUpper(h))
 	}
 	fmt.Fprintln(tw)
-	
+
 	// Write separator
 	for i := range header {
 		if i > 0 {
@@ -86,7 +86,7 @@ func (w *Writer) writeTable(header []string, records [][]string, out io.Writer) 
 		fmt.Fprint(tw, strings.Repeat("-", len(strings.ToUpper(header[i]))))
 	}
 	fmt.Fprintln(tw)
-	
+
 	// Write records
 	for _, rec := range records {
 		for i, val := range rec {
@@ -97,7 +97,7 @@ func (w *Writer) writeTable(header []string, records [][]string, out io.Writer) 
 		}
 		fmt.Fprintln(tw)
 	}
-	
+
 	return tw.Flush()
 }
 
@@ -105,12 +105,12 @@ func (w *Writer) writeTable(header []string, records [][]string, out io.Writer) 
 func (w *Writer) writeCSV(header []string, records [][]string, out io.Writer) error {
 	// Write header
 	w.writeCSVLineMethod(out, header)
-	
+
 	// Write records
 	for _, rec := range records {
 		w.writeCSVLineMethod(out, rec)
 	}
-	
+
 	return nil
 }
 
@@ -151,7 +151,7 @@ func (w *Writer) writeCSVLine(out io.Writer, fields []string) {
 // writeJSON writes JSON array format
 func (w *Writer) writeJSON(header []string, records [][]string, out io.Writer) error {
 	var result []map[string]string
-	
+
 	for _, rec := range records {
 		row := make(map[string]string)
 		for i, h := range header {
@@ -163,7 +163,7 @@ func (w *Writer) writeJSON(header []string, records [][]string, out io.Writer) e
 		}
 		result = append(result, row)
 	}
-	
+
 	encoder := json.NewEncoder(out)
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(result)
@@ -180,7 +180,7 @@ func (w *Writer) writeJSONL(header []string, records [][]string, out io.Writer) 
 				row[h] = ""
 			}
 		}
-		
+
 		data, err := json.Marshal(row)
 		if err != nil {
 			return err
@@ -201,7 +201,7 @@ func (w *Writer) writeMarkdown(header []string, records [][]string, out io.Write
 		fmt.Fprint(out, h)
 	}
 	fmt.Fprintln(out, " |")
-	
+
 	// Write separator
 	fmt.Fprint(out, "| ")
 	for i := range header {
@@ -211,7 +211,7 @@ func (w *Writer) writeMarkdown(header []string, records [][]string, out io.Write
 		fmt.Fprint(out, "---")
 	}
 	fmt.Fprintln(out, " |")
-	
+
 	// Write records
 	for _, rec := range records {
 		fmt.Fprint(out, "| ")
@@ -225,7 +225,7 @@ func (w *Writer) writeMarkdown(header []string, records [][]string, out io.Write
 		}
 		fmt.Fprintln(out, " |")
 	}
-	
+
 	return nil
 }
 
@@ -257,7 +257,7 @@ func WriteToFile(header []string, records [][]string, filename string, format Fo
 		return fmt.Errorf("create file: %w", err)
 	}
 	defer f.Close()
-	
+
 	w := NewWriter(format)
 	return w.Write(header, records, f)
 }

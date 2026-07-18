@@ -62,7 +62,7 @@ func DetectDelimiter(data []byte) rune {
 	tabs := 0
 	semicolons := 0
 	pipes := 0
-	
+
 	lines := strings.SplitN(string(data), "\n", 10)
 	for _, line := range lines {
 		commas += strings.Count(line, ",")
@@ -70,7 +70,7 @@ func DetectDelimiter(data []byte) rune {
 		semicolons += strings.Count(line, ";")
 		pipes += strings.Count(line, "|")
 	}
-	
+
 	// Pick the most common
 	max := commas
 	delim := ','
@@ -85,7 +85,7 @@ func DetectDelimiter(data []byte) rune {
 	if pipes > max {
 		delim = '|'
 	}
-	
+
 	return delim
 }
 
@@ -105,20 +105,20 @@ func DetectEncoding(data []byte) string {
 func (r *Reader) Read() error {
 	r.header = nil
 	r.records = nil
-	
+
 	// Set delimiter
 	r.reader.Comma = r.delim
-	
+
 	// Read all records
 	records, err := r.reader.ReadAll()
 	if err != nil {
 		return fmt.Errorf("read csv: %w", err)
 	}
-	
+
 	if len(records) == 0 {
 		return nil
 	}
-	
+
 	if r.hasHeader {
 		r.header = records[0]
 		r.records = records[1:]
@@ -132,7 +132,7 @@ func (r *Reader) Read() error {
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -230,9 +230,9 @@ func (r *Reader) Filter(fn FilterFunc) *Reader {
 
 // FilterExpr represents a simple filter expression
 type FilterExpr struct {
-	Column    string
-	Operator  string // eq, neq, gt, gte, lt, lte, contains, starts_with, ends_with
-	Value     string
+	Column   string
+	Operator string // eq, neq, gt, gte, lt, lte, contains, starts_with, ends_with
+	Value    string
 }
 
 // Matches checks if a row matches the filter expression
@@ -241,7 +241,7 @@ func (f FilterExpr) Matches(row map[string]string) bool {
 	if !ok {
 		return false
 	}
-	
+
 	switch f.Operator {
 	case "eq", "=":
 		return val == f.Value
@@ -279,15 +279,15 @@ func (r *Reader) Sort(column string, descending bool) *Reader {
 	if idx < 0 {
 		return r
 	}
-	
+
 	sorted := make([][]string, len(r.records))
 	copy(sorted, r.records)
-	
+
 	// Simple insertion sort (good enough for most CSV files)
 	for i := 1; i < len(sorted); i++ {
 		key := sorted[i]
 		j := i - 1
-		
+
 		for j >= 0 {
 			a := ""
 			b := ""
@@ -297,12 +297,12 @@ func (r *Reader) Sort(column string, descending bool) *Reader {
 			if idx < len(key) {
 				b = key[idx]
 			}
-			
+
 			compare := strings.Compare(a, b)
 			if descending {
 				compare = -compare
 			}
-			
+
 			if compare > 0 {
 				sorted[j+1] = sorted[j]
 				j--
@@ -312,7 +312,7 @@ func (r *Reader) Sort(column string, descending bool) *Reader {
 		}
 		sorted[j+1] = key
 	}
-	
+
 	return &Reader{
 		header:  r.header,
 		records: sorted,
@@ -350,11 +350,11 @@ func (r *Reader) Sample(n int, seed int64) *Reader {
 	if n >= len(r.records) {
 		return r
 	}
-	
+
 	// Simple deterministic sampling using seed
 	result := make([][]string, n)
 	used := make(map[int]bool)
-	
+
 	for i := 0; i < n; i++ {
 		// Simple hash-based selection
 		idx := int((seed + int64(i*7919)) % int64(len(r.records)))
@@ -364,7 +364,7 @@ func (r *Reader) Sample(n int, seed int64) *Reader {
 		used[idx] = true
 		result[i] = r.records[idx]
 	}
-	
+
 	return &Reader{
 		header:  r.header,
 		records: result,
@@ -377,7 +377,7 @@ func (r *Reader) Dedup(columns []string) *Reader {
 	if len(columns) == 0 {
 		columns = r.header
 	}
-	
+
 	// Get column indices
 	indices := make([]int, 0, len(columns))
 	for _, col := range columns {
@@ -385,10 +385,10 @@ func (r *Reader) Dedup(columns []string) *Reader {
 			indices = append(indices, idx)
 		}
 	}
-	
+
 	seen := make(map[string]bool)
 	var deduped [][]string
-	
+
 	for _, rec := range r.records {
 		// Build key from specified columns
 		key := ""
@@ -397,13 +397,13 @@ func (r *Reader) Dedup(columns []string) *Reader {
 				key += rec[idx] + "\x00"
 			}
 		}
-		
+
 		if !seen[key] {
 			seen[key] = true
 			deduped = append(deduped, rec)
 		}
 	}
-	
+
 	return &Reader{
 		header:  r.header,
 		records: deduped,
@@ -415,11 +415,11 @@ func (r *Reader) Dedup(columns []string) *Reader {
 func (r *Reader) Join(other *Reader, joinCol string, joinType string) *Reader {
 	idx1 := r.ColumnIndex(joinCol)
 	idx2 := other.ColumnIndex(joinCol)
-	
+
 	if idx1 < 0 || idx2 < 0 {
 		return r
 	}
-	
+
 	// Build lookup from other reader
 	lookup := make(map[string][][]string)
 	for _, rec := range other.records {
@@ -428,7 +428,7 @@ func (r *Reader) Join(other *Reader, joinCol string, joinType string) *Reader {
 			lookup[key] = append(lookup[key], rec)
 		}
 	}
-	
+
 	// Merge headers (avoid duplicates)
 	mergedHeader := make([]string, 0, len(r.header)+len(other.header))
 	mergedHeader = append(mergedHeader, r.header...)
@@ -441,17 +441,17 @@ func (r *Reader) Join(other *Reader, joinCol string, joinType string) *Reader {
 			mergedHeader = append(mergedHeader, h)
 		}
 	}
-	
+
 	// Perform join
 	var joined [][]string
 	matched := make(map[string]bool)
-	
+
 	for _, rec := range r.records {
 		key := ""
 		if idx1 < len(rec) {
 			key = rec[idx1]
 		}
-		
+
 		matches, ok := lookup[key]
 		if ok {
 			matched[key] = true
@@ -480,7 +480,7 @@ func (r *Reader) Join(other *Reader, joinCol string, joinType string) *Reader {
 			joined = append(joined, merged)
 		}
 	}
-	
+
 	// For right/full joins, add unmatched rows from other
 	if joinType == "right" || joinType == "full" {
 		for key, matches := range lookup {
@@ -503,7 +503,7 @@ func (r *Reader) Join(other *Reader, joinCol string, joinType string) *Reader {
 			}
 		}
 	}
-	
+
 	return &Reader{
 		header:  mergedHeader,
 		records: joined,
@@ -527,11 +527,11 @@ func (r *Reader) Aggregate(groupBy []string, aggs []AggFunc) *Reader {
 			groupIndices = append(groupIndices, idx)
 		}
 	}
-	
+
 	// Group records
 	groups := make(map[string][][]string)
 	groupOrder := make([]string, 0)
-	
+
 	for _, rec := range r.records {
 		key := ""
 		for _, idx := range groupIndices {
@@ -539,13 +539,13 @@ func (r *Reader) Aggregate(groupBy []string, aggs []AggFunc) *Reader {
 				key += rec[idx] + "\x00"
 			}
 		}
-		
+
 		if _, exists := groups[key]; !exists {
 			groupOrder = append(groupOrder, key)
 		}
 		groups[key] = append(groups[key], rec)
 	}
-	
+
 	// Build result header
 	resultHeader := make([]string, 0, len(groupBy)+len(aggs))
 	resultHeader = append(resultHeader, groupBy...)
@@ -556,13 +556,13 @@ func (r *Reader) Aggregate(groupBy []string, aggs []AggFunc) *Reader {
 			resultHeader = append(resultHeader, agg.Function+"_"+agg.Column)
 		}
 	}
-	
+
 	// Apply aggregations
 	var results [][]string
 	for _, key := range groupOrder {
 		records := groups[key]
 		row := make([]string, len(resultHeader))
-		
+
 		// Copy group values
 		if len(records) > 0 {
 			for i, idx := range groupIndices {
@@ -571,28 +571,28 @@ func (r *Reader) Aggregate(groupBy []string, aggs []AggFunc) *Reader {
 				}
 			}
 		}
-		
+
 		// Apply aggregation functions
 		for j, agg := range aggs {
 			colIdx := r.ColumnIndex(agg.Column)
 			if colIdx < 0 {
 				continue
 			}
-			
+
 			values := make([]string, len(records))
 			for i, rec := range records {
 				if colIdx < len(rec) {
 					values[i] = rec[colIdx]
 				}
 			}
-			
+
 			result := applyAggFunc(values, agg.Function)
 			row[len(groupBy)+j] = result
 		}
-		
+
 		results = append(results, row)
 	}
-	
+
 	return &Reader{
 		header:  resultHeader,
 		records: results,
@@ -666,10 +666,10 @@ func Merge(readers ...*Reader) *Reader {
 	if len(readers) == 0 {
 		return &Reader{}
 	}
-	
+
 	header := readers[0].header
 	var allRecords [][]string
-	
+
 	for _, r := range readers {
 		for _, rec := range r.records {
 			// Ensure record matches header length
@@ -681,7 +681,7 @@ func Merge(readers ...*Reader) *Reader {
 			allRecords = append(allRecords, rec)
 		}
 	}
-	
+
 	return &Reader{
 		header:  header,
 		records: allRecords,
@@ -708,21 +708,21 @@ func (r *Reader) Split(n int) []*Reader {
 
 // Stats computes column statistics
 type ColumnStats struct {
-	Name     string
-	Type     string // string, number, mixed
-	Count    int
-	Nulls    int
-	Unique   int
-	Min      string
-	Max      string
-	AvgLen   float64
-	Samples  []string
+	Name    string
+	Type    string // string, number, mixed
+	Count   int
+	Nulls   int
+	Unique  int
+	Min     string
+	Max     string
+	AvgLen  float64
+	Samples []string
 }
 
 // ComputeStats computes statistics for each column
 func (r *Reader) ComputeStats() []ColumnStats {
 	stats := make([]ColumnStats, len(r.header))
-	
+
 	for i, h := range r.header {
 		stats[i].Name = h
 		unique := make(map[string]bool)
@@ -730,13 +730,13 @@ func (r *Reader) ComputeStats() []ColumnStats {
 		isNumeric := true
 		min := ""
 		max := ""
-		
+
 		for _, rec := range r.records {
 			val := ""
 			if i < len(rec) {
 				val = rec[i]
 			}
-			
+
 			stats[i].Count++
 			if val == "" {
 				stats[i].Nulls++
@@ -756,20 +756,20 @@ func (r *Reader) ComputeStats() []ColumnStats {
 				}
 			}
 		}
-		
+
 		stats[i].Unique = len(unique)
 		stats[i].Min = min
 		stats[i].Max = max
 		if stats[i].Count-stats[i].Nulls > 0 {
 			stats[i].AvgLen = float64(totalLen) / float64(stats[i].Count-stats[i].Nulls)
 		}
-		
+
 		if isNumeric {
 			stats[i].Type = "number"
 		} else {
 			stats[i].Type = "string"
 		}
-		
+
 		// Collect samples
 		sampleCount := 0
 		for _, rec := range r.records {
@@ -782,7 +782,7 @@ func (r *Reader) ComputeStats() []ColumnStats {
 			}
 		}
 	}
-	
+
 	return stats
 }
 
@@ -796,7 +796,7 @@ type ValidationError struct {
 // Validate checks for common CSV issues
 func (r *Reader) Validate() []ValidationError {
 	var errors []ValidationError
-	
+
 	for i, rec := range r.records {
 		// Check for wrong number of fields
 		if len(rec) != len(r.header) {
@@ -806,7 +806,7 @@ func (r *Reader) Validate() []ValidationError {
 				Message: fmt.Sprintf("expected %d fields, got %d", len(r.header), len(rec)),
 			})
 		}
-		
+
 		// Check for empty rows
 		allEmpty := true
 		for _, field := range rec {
@@ -822,7 +822,7 @@ func (r *Reader) Validate() []ValidationError {
 				Message: "empty row",
 			})
 		}
-		
+
 		// Check for whitespace-only fields
 		for j, field := range rec {
 			if field != "" && strings.TrimSpace(field) != field {
@@ -835,7 +835,7 @@ func (r *Reader) Validate() []ValidationError {
 				}
 			}
 		}
-		
+
 		// Check for null bytes
 		for j, field := range rec {
 			if strings.ContainsRune(field, '\x00') {
@@ -849,7 +849,7 @@ func (r *Reader) Validate() []ValidationError {
 			}
 		}
 	}
-	
+
 	return errors
 }
 
@@ -877,12 +877,12 @@ func (r *Reader) SelectColumns(columns []string) *Reader {
 			indices = append(indices, idx)
 		}
 	}
-	
+
 	newHeader := make([]string, len(indices))
 	for i, idx := range indices {
 		newHeader[i] = r.header[idx]
 	}
-	
+
 	newRecords := make([][]string, len(r.records))
 	for i, rec := range r.records {
 		newRecords[i] = make([]string, len(indices))
@@ -892,7 +892,7 @@ func (r *Reader) SelectColumns(columns []string) *Reader {
 			}
 		}
 	}
-	
+
 	return &Reader{
 		header:  newHeader,
 		records: newRecords,
@@ -905,14 +905,14 @@ func (r *Reader) AddColumn(name string, defaultValue string) *Reader {
 	newHeader := make([]string, len(r.header)+1)
 	copy(newHeader, r.header)
 	newHeader[len(r.header)] = name
-	
+
 	newRecords := make([][]string, len(r.records))
 	for i, rec := range r.records {
 		newRecords[i] = make([]string, len(rec)+1)
 		copy(newRecords[i], rec)
 		newRecords[i][len(rec)] = defaultValue
 	}
-	
+
 	return &Reader{
 		header:  newHeader,
 		records: newRecords,
@@ -926,7 +926,7 @@ func (r *Reader) DropColumns(columns []string) *Reader {
 	for _, col := range columns {
 		dropSet[strings.ToLower(col)] = true
 	}
-	
+
 	var keepIndices []int
 	var newHeader []string
 	for i, h := range r.header {
@@ -935,7 +935,7 @@ func (r *Reader) DropColumns(columns []string) *Reader {
 			newHeader = append(newHeader, h)
 		}
 	}
-	
+
 	newRecords := make([][]string, len(r.records))
 	for i, rec := range r.records {
 		newRecords[i] = make([]string, len(keepIndices))
@@ -945,7 +945,7 @@ func (r *Reader) DropColumns(columns []string) *Reader {
 			}
 		}
 	}
-	
+
 	return &Reader{
 		header:  newHeader,
 		records: newRecords,
@@ -957,14 +957,14 @@ func (r *Reader) DropColumns(columns []string) *Reader {
 func (r *Reader) RenameColumn(oldName, newName string) *Reader {
 	newHeader := make([]string, len(r.header))
 	copy(newHeader, r.header)
-	
+
 	for i, h := range r.header {
 		if strings.EqualFold(h, oldName) {
 			newHeader[i] = newName
 			break
 		}
 	}
-	
+
 	return &Reader{
 		header:  newHeader,
 		records: r.records,
@@ -976,12 +976,12 @@ func (r *Reader) RenameColumn(oldName, newName string) *Reader {
 func (r *Reader) Where(condition string) *Reader {
 	// Simple parser for conditions like "column = value" or "column > value"
 	// Supports: =, !=, >, <, >=, <=, LIKE, IS NULL, IS NOT NULL
-	
+
 	parts := parseWhereCondition(condition)
 	if parts == nil {
 		return r
 	}
-	
+
 	return r.Filter(func(row map[string]string) bool {
 		val, ok := row[parts.Column]
 		if !ok {
@@ -1036,10 +1036,10 @@ func (w *WhereCondition) Matches(val string) bool {
 // parseWhereCondition parses a WHERE condition string
 func parseWhereCondition(condition string) *WhereCondition {
 	condition = strings.TrimSpace(condition)
-	
+
 	// Try operators in order of length (longest first)
 	operators := []string{">=", "<=", "!=", "LIKE", "IS NULL", "IS NOT NULL", "=", ">", "<"}
-	
+
 	for _, op := range operators {
 		idx := strings.Index(strings.ToUpper(condition), op)
 		if idx > 0 {
@@ -1054,7 +1054,7 @@ func parseWhereCondition(condition string) *WhereCondition {
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -1062,19 +1062,19 @@ func parseWhereCondition(condition string) *WhereCondition {
 func (r *Reader) Write(w io.Writer, delim rune) error {
 	cw := csv.NewWriter(w)
 	cw.Comma = delim
-	
+
 	// Write header
 	if err := cw.Write(r.header); err != nil {
 		return fmt.Errorf("write header: %w", err)
 	}
-	
+
 	// Write records
 	for _, rec := range r.records {
 		if err := cw.Write(rec); err != nil {
 			return fmt.Errorf("write record: %w", err)
 		}
 	}
-	
+
 	cw.Flush()
 	return cw.Error()
 }

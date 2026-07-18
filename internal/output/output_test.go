@@ -12,13 +12,13 @@ func TestWriteTable(t *testing.T) {
 		{"Alice", "30", "NYC"},
 		{"Bob", "25", "LA"},
 	}
-	
+
 	var buf bytes.Buffer
 	w := NewWriter(FormatTable)
 	if err := w.Write(header, records, &buf); err != nil {
 		t.Fatalf("Write() error = %v", err)
 	}
-	
+
 	output := buf.String()
 	if !strings.Contains(output, "NAME") {
 		t.Error("Expected uppercase header")
@@ -34,13 +34,13 @@ func TestWriteJSON(t *testing.T) {
 		{"Alice", "30"},
 		{"Bob", "25"},
 	}
-	
+
 	var buf bytes.Buffer
 	w := NewWriter(FormatJSON)
 	if err := w.Write(header, records, &buf); err != nil {
 		t.Fatalf("Write() error = %v", err)
 	}
-	
+
 	output := buf.String()
 	if !strings.Contains(output, `"name": "Alice"`) {
 		t.Error("Expected JSON output with name field")
@@ -56,13 +56,13 @@ func TestWriteJSONL(t *testing.T) {
 		{"Alice", "30"},
 		{"Bob", "25"},
 	}
-	
+
 	var buf bytes.Buffer
 	w := NewWriter(FormatJSONL)
 	if err := w.Write(header, records, &buf); err != nil {
 		t.Fatalf("Write() error = %v", err)
 	}
-	
+
 	output := buf.String()
 	lines := strings.Split(strings.TrimSpace(output), "\n")
 	if len(lines) != 2 {
@@ -79,13 +79,13 @@ func TestWriteMarkdown(t *testing.T) {
 		{"Alice", "30"},
 		{"Bob", "25"},
 	}
-	
+
 	var buf bytes.Buffer
 	w := NewWriter(FormatMarkdown)
 	if err := w.Write(header, records, &buf); err != nil {
 		t.Fatalf("Write() error = %v", err)
 	}
-	
+
 	output := buf.String()
 	if !strings.Contains(output, "| name | age |") {
 		t.Error("Expected Markdown table header")
@@ -104,13 +104,13 @@ func TestWriteCSV(t *testing.T) {
 		{"Alice", "30"},
 		{"Bob", "25"},
 	}
-	
+
 	var buf bytes.Buffer
 	w := NewWriter(FormatCSV)
 	if err := w.Write(header, records, &buf); err != nil {
 		t.Fatalf("Write() error = %v", err)
 	}
-	
+
 	output := buf.String()
 	if !strings.Contains(output, "name,age") {
 		t.Error("Expected CSV header")
@@ -126,13 +126,13 @@ func TestWriteCSVWithQuotes(t *testing.T) {
 		{"Alice", "She said \"hello\""},
 		{"Bob", "Comma, here"},
 	}
-	
+
 	var buf bytes.Buffer
 	w := NewWriter(FormatCSV)
 	if err := w.Write(header, records, &buf); err != nil {
 		t.Fatalf("Write() error = %v", err)
 	}
-	
+
 	output := buf.String()
 	if !strings.Contains(output, `"She said ""hello"""`) {
 		t.Error("Expected quoted field")
@@ -147,13 +147,13 @@ func TestWriteTSV(t *testing.T) {
 	records := [][]string{
 		{"Alice", "30"},
 	}
-	
+
 	var buf bytes.Buffer
 	w := NewWriter(FormatTSV)
 	if err := w.Write(header, records, &buf); err != nil {
 		t.Fatalf("Write() error = %v", err)
 	}
-	
+
 	output := buf.String()
 	if !strings.Contains(output, "name\tage") {
 		t.Error("Expected TSV header with tab delimiter")
@@ -165,13 +165,13 @@ func TestWriteMinimal(t *testing.T) {
 	records := [][]string{
 		{"Alice", "30"},
 	}
-	
+
 	var buf bytes.Buffer
 	w := NewWriter(FormatMinimal)
 	if err := w.Write(header, records, &buf); err != nil {
 		t.Fatalf("Write() error = %v", err)
 	}
-	
+
 	output := buf.String()
 	if !strings.Contains(output, "Alice 30") {
 		t.Error("Expected space-separated output")
